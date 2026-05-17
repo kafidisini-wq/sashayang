@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>buat salshabila</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        body, html {
+            width: 100%; height: 100%;
+            background-color: #000;
+            font-family: 'Quicksand', sans-serif;
+            overflow: hidden; 
+            color: #fff;
+        }
+
+        /* --- 3D STARFIELD CANVAS --- */
+        #space-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+        }
+
+        /* --- UI OVERLAYS --- */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            pointer-events: none;
+        }
+
+        .title-text {
+            position: absolute; top: 20%; width: 100%; text-align: center;
+            font-size: 16px; font-weight: 500; color: #aaa; letter-spacing: 2px;
+            animation: pulseText 3s infinite alternate; transition: opacity 1s;
+        }
+
+        /* Tombol Hold */
+        .warp-core {
+            position: absolute; bottom: 15%;
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex; justify-content: center; align-items: center;
+            pointer-events: auto; cursor: pointer; touch-action: none;
+            box-shadow: 0 0 30px rgba(255, 117, 140, 0); transition: all 0.3s;
+        }
+        .warp-core::before {
+            content: ''; position: absolute; width: 60px; height: 60px;
+            background: rgba(255, 255, 255, 0.1); border-radius: 50%;
+            animation: coreBreathe 2s infinite alternate;
+        }
+        .warp-hint {
+            position: absolute; bottom: -30px; width: 200px; text-align: center;
+            font-size: 12px; color: #888; font-weight: 700; letter-spacing: 1px;
+        }
+
+        /* Progress Bar Menembus Jarak */
+        .warp-progress-container {
+            position: absolute; bottom: 8%; width: 60%; height: 4px;
+            background: rgba(255,255,255,0.1); border-radius: 4px;
+            overflow: hidden; opacity: 0; transition: opacity 0.5s;
+        }
+        .warp-progress-bar {
+            width: 0%; height: 100%; background: linear-gradient(90deg, #ff758c, #ff7eb3, #fff);
+            box-shadow: 0 0 10px #ff758c; transition: width 0.1s linear;
+        }
+
+        /* --- THE REVEAL STAGE (AURORA & GLASS) --- */
+        #reveal-stage {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20;
+            background: linear-gradient(-45deg, #2b1055, #7597de, #fbc2eb, #ff7eb3);
+            background-size: 400% 400%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 2s ease;
+            animation: gradientBG 15s ease infinite;
+        }
+        #reveal-stage.show { opacity: 1; pointer-events: auto; }
+
+        /* Kaca 3D (Glassmorphism) */
+        .glass-card {
+            width: 85%; max-width: 360px; padding: 30px 20px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.2);
+            display: flex; flex-direction: column; align-items: center;
+            transform-style: preserve-3d; transform: perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(50px);
+            opacity: 0; transition: opacity 1.5s ease 0.5s, transform 0.1s ease-out;
+        }
+        #reveal-stage.show .glass-card { opacity: 1; }
+
+        /* Frame Foto */
+        .photo-frame {
+            width: 140px; height: 140px; border-radius: 50%;
+            padding: 5px; background: linear-gradient(135deg, #fff, #ff7eb3);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            transform: translateZ(40px);
+            margin-bottom: 25px; overflow: hidden;
+        }
+        .photo-frame img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+        /* Teks Sinematik */
+        .cinematic-text {
+            width: 100%; text-align: center; font-size: 15px; line-height: 1.7;
+            color: #fff; font-weight: 500; text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transform: translateZ(20px);
+        }
+        .cinematic-text span { font-weight: 700; color: #ffe3e8; }
+        
+        .kafi-sign {
+            margin-top: 20px; font-size: 16px; font-weight: 700;
+            color: #fff; transform: translateZ(30px);
+            background: rgba(0,0,0,0.2); padding: 8px 20px; border-radius: 20px;
+        }
+
+        /* --- FLASH SUPERNOVA --- */
+        #supernova-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 100; opacity: 0; pointer-events: none;
+        }
+
+        /* --- ANIMASI CSS --- */
+        @keyframes pulseText { 0% { opacity: 0.4; } 100% { opacity: 1; text-shadow: 0 0 15px rgba(255,255,255,0.5); } }
+        @keyframes coreBreathe { 0% { transform: scale(0.8); } 100% { transform: scale(1.1); background: rgba(255, 117, 140, 0.4); } }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes explosion { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <canvas id="space-canvas"></canvas>
+
+    <div id="supernova-flash"></div>
+
+    <div id="ui-layer">
+        <div class="title-text" id="title-text">jarak ini lumayan jauh ya...</div>
+        
+        <div class="warp-core" id="warp-btn">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            <div class="warp-hint" id="warp-hint">TAHAN UNTUK MENDEKAT</div>
+        </div>
+
+        <div class="warp-progress-container" id="progress-container">
+            <div class="warp-progress-bar" id="progress-bar"></div>
+        </div>
+    </div>
+
+    <div id="reveal-stage">
+        <div class="glass-card" id="3d-card">
+            <div class="photo-frame">
+                <img src="sasha.jpg" alt="salshabila">
+            </div>
+            <div class="cinematic-text" id="type-text"></div>
+            <div class="kafi-sign" style="opacity:0; transition: all 1s ease;" id="k-sign">istirahat bareng kafi ya 🤍</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('space-canvas');
+        const ctx = canvas.getContext('2d');
+        let w, h;
+        
+        function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize); resize();
+
+        let stars = [];
+        const numStars = 600; 
+        let fov = 250; 
+        let isWarping = false;
+        let warpZSpeed = 0; 
+
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: (Math.random() - 0.5) * w * 2,
+                y: (Math.random() - 0.5) * h * 2,
+                z: Math.random() * w,
+                pz: Math.random() * w 
+            });
+        }
+
+        function renderSpace() {
+            ctx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : '#000';
+            ctx.fillRect(0, 0, w, h);
+
+            let centerX = w / 2;
+            let centerY = h / 2;
+
+            let targetSpeed = isWarping ? 80 : 0.5;
+            warpZSpeed += (targetSpeed - warpZSpeed) * 0.05;
+
+            for (let i = 0; i < numStars; i++) {
+                let s = stars[i];
+                s.pz = s.z;
+                s.z -= warpZSpeed;
+
+                if (s.z <= 0) {
+                    s.z = w; s.pz = w;
+                    s.x = (Math.random() - 0.5) * w * 2;
+                    s.y = (Math.random() - 0.5) * h * 2;
+                }
+
+                let x = centerX + (s.x / s.z) * fov;
+                let y = centerY + (s.y / s.z) * fov;
+                let px = centerX + (s.x / s.pz) * fov;
+                let py = centerY + (s.y / s.pz) * fov;
+
+                let size = (1 - s.z / w) * 3;
+                let alpha = 1 - (s.z / w);
+
+                ctx.beginPath();
+                if (isWarping && warpZSpeed > 10) {
+                    ctx.moveTo(px, py);
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = Math.random() > 0.5 ? `rgba(255, 117, 140, ${alpha})` : `rgba(102, 252, 241, ${alpha})`;
+                    ctx.lineWidth = size;
+                    ctx.stroke();
+                } else {
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.fill();
+                }
+            }
+            if(document.getElementById('ui-layer').style.display !== 'none') requestAnimationFrame(renderSpace);
+        }
+        renderSpace();
+
+        /* INTERACTION LOGIC */
+        let warpProgress = 0;
+        let warpInterval;
+        const warpBtn = document.getElementById('warp-btn');
+        const progContainer = document.getElementById('progress-container');
+        const progBar = document.getElementById('progress-bar');
+        const titleText = document.getElementById('title-text');
+        const hintText = document.getElementById('warp-hint');
+
+        function startWarp(e) {
+            if(e) e.preventDefault();
+            if(warpProgress >= 100) return;
+            isWarping = true;
+
+            warpBtn.style.transform = 'scale(0.85)';
+            warpBtn.style.boxShadow = '0 0 50px rgba(255, 117, 140, 0.8)';
+            warpBtn.style.border = '2px solid #ff758c';
+            
+            progContainer.style.opacity = '1';
+            titleText.innerText = "menembus jarak...";
+            titleText.style.color = "#ff7eb3";
+            hintText.innerText = "JANGAN LEPAS!";
+            hintText.style.color = "#ff758c";
+            
+            if(navigator.vibrate) navigator.vibrate(50);
+
+            warpInterval = setInterval(() => {
+                warpProgress += 1.2; 
+                progBar.style.width = warpProgress + '%';
+                
+                if(warpProgress % 10 < 2 && navigator.vibrate) navigator.vibrate(30);
+
+                if(warpProgress >= 100) {
+                    warpProgress = 100;
+                    triggerSupernova();
+                }
+            }, 30);
+        }
+
+        function stopWarp() {
+            if(warpProgress >= 100) return;
+            isWarping = false;
+            clearInterval(warpInterval);
+            
+            warpBtn.style.transform = 'scale(1)';
+            warpBtn.style.boxShadow = '0 0 0px transparent';
+            warpBtn.style.border = '2px solid rgba(255, 255, 255, 0.3)';
+            
+            titleText.innerText = "jarak ini lumayan jauh ya...";
+            titleText.style.color = "#aaa";
+            hintText.innerText = "TAHAN UNTUK MENDEKAT";
+            hintText.style.color = "#888";
+            
+            warpInterval = setInterval(() => {
+                warpProgress -= 2;
+                if(warpProgress <= 0) { warpProgress = 0; clearInterval(warpInterval); progContainer.style.opacity = '0'; }
+                progBar.style.width = warpProgress + '%';
+            }, 20);
+        }
+
+        warpBtn.addEventListener('mousedown', startWarp);
+        warpBtn.addEventListener('mouseup', stopWarp);
+        warpBtn.addEventListener('mouseleave', stopWarp);
+        warpBtn.addEventListener('touchstart', startWarp, {passive: false});
+        warpBtn.addEventListener('touchend', stopWarp);
+
+        function triggerSupernova() {
+            clearInterval(warpInterval);
+            if(navigator.vibrate) navigator.vibrate([100, 50, 200, 100, 500]);
+            
+            const flash = document.getElementById('supernova-flash');
+            flash.style.animation = 'explosion 2s cubic-bezier(0.25, 1, 0.5, 1) forwards';
+            
+            setTimeout(() => {
+                document.getElementById('ui-layer').style.display = 'none';
+                document.getElementById('reveal-stage').classList.add('show');
+                setTimeout(startTypingReveal, 1000);
+            }, 500); 
+        }
+
+        /* 3D PARALLAX EFFECT */
+        const card = document.getElementById('3d-card');
+        const revealStage = document.getElementById('reveal-stage');
+
+        revealStage.addEventListener('mousemove', (e) => {
+            let xAxis = (window.innerWidth / 2 - e.pageX) / 15;
+            let yAxis = (window.innerHeight / 2 - e.pageY) / 15;
+            card.style.transform = `perspective(1000px) rotateY(${-xAxis}deg) rotateX(${yAxis}deg) translateY(0)`;
+        });
+
+        revealStage.addEventListener('touchmove', (e) => {
+            let touch = e.touches[0];
+            let xAxis = (window.innerWidth / 2 - touch.clientX) / 15;
+            let yAxis = (window.innerHeight / 2 - touch.clientY) / 15;
+            card.style.transform = `perspective(1000px) rotateY(${-xAxis}deg) rotateX(${yAxis}deg) translateY(0)`;
+        });
+
+        revealStage.addEventListener('mouseleave', () => { card.style.transform = `perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(0)`; });
+        revealStage.addEventListener('touchend', () => { card.style.transform = `perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(0)`; });
+
+        /* TYPING TEXT EFFECT */
+        const pesanTeks = "akhirnya nyampe rumah juga. bersihin badan, pakai baju paling nyaman, terus rebahan. asal kamu tau, sejauh apapun jaraknya, kamu itu <span>rumah</span> aku.";
+        let charIndex = 0;
+        const typeDest = document.getElementById('type-text');
+
+        function startTypingReveal() {
+            if (charIndex < pesanTeks.length) {
+                let char = pesanTeks.charAt(charIndex);
+                if (pesanTeks.substring(charIndex, charIndex + 6) === "<span>") {
+                    typeDest.innerHTML += "<span>rumah</span>";
+                    charIndex += 14;
+                } else {
+                    typeDest.innerHTML += char;
+                    charIndex++;
+                }
+                setTimeout(startTypingReveal, 55);
+            } else {
+                setTimeout(() => {
+                    const kSign = document.getElementById('k-sign');
+                    kSign.style.opacity = '1';
+                }, 800);
+            }
+        }
+    </script>
+</body>
+</html>
