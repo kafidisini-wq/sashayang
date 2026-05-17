@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>buat salshabila</title>
+    <title>buat sayang salshabila</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -111,7 +111,7 @@
             font-size: 16px; font-weight: 700;
             color: #fff; transform: translateZ(30px);
             background: rgba(0,0,0,0.15); padding: 8px 20px; border-radius: 20px;
-            margin-bottom: 20px; transition: opacity 1s ease;
+            margin-bottom: 20px; opacity: 0; transition: opacity 1s ease;
         }
 
         /* Tombol WhatsApp Premium */
@@ -167,8 +167,8 @@
                 <img src="sasha.jpg" alt="salshabila">
             </div>
             <div class="cinematic-text" id="type-text"></div>
-            <div class="kafi-sign" style="opacity:0;" id="k-sign">istirahat bareng kafi ya 🤍</div>
-            <a href="https://wa.me/6285794728731?text=aku%20udah%20sampe%20rumah%20sayang" class="wa-btn" id="wa-btn">kalo click ini kamu kangen aku</a>
+            <div class="kafi-sign" id="k-sign">istirahat bareng kafi ya 🤍</div>
+            <a href="https://wa.me/6285794728731?text=aku%20kangen%20kamu%20sayang" class="wa-btn" id="wa-btn">kalo click ini kamu kangen aku</a>
         </div>
     </div>
 
@@ -344,24 +344,22 @@
         revealStage.addEventListener('mouseleave', () => { card.style.transform = `perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(0)`; });
         revealStage.addEventListener('touchend', () => { card.style.transform = `perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(0)`; });
 
-        /* TYPING TEXT EFFECT */
+        /* TYPING TEXT EFFECT (FIXED CHARACTER BYPASS) */
         const pesanTeks = "akhirnya nyampe rumah juga. bersihin badan, pakai baju paling nyaman, terus rebahan. asal kamu tau, sejauh apapun jaraknya, kamu itu <span>rumah</span> aku.";
         let charIndex = 0;
         const typeDest = document.getElementById('type-text');
 
         function startTypingReveal() {
             if (charIndex < pesanTeks.length) {
-                let char = pesanTeks.charAt(charIndex);
                 if (pesanTeks.substring(charIndex, charIndex + 6) === "<span>") {
                     typeDest.innerHTML += "<span>rumah</span>";
-                    charIndex += 14;
+                    charIndex += 14; // Lewati tag span utuh agar tidak terpotong menjadi 'rumahpan'
                 } else {
-                    typeDest.innerHTML += char;
+                    typeDest.innerHTML += pesanTeks.charAt(charIndex);
                     charIndex++;
                 }
                 setTimeout(startTypingReveal, 55);
             } else {
-                // Setelah teks kelar ngetik, munculin tanda tangan & tombol WA
                 setTimeout(() => {
                     document.getElementById('k-sign').style.opacity = '1';
                     setTimeout(() => {
